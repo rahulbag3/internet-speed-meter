@@ -85,6 +85,14 @@ to `tools/paths.local.json` and point `referenceHtml` at it, or set `SM_REFERENC
 `tools/winshot` is a small C# probe used for window geometry, screen grabs, pixel diffs and
 synthetic input.
 
+## Acknowledgements
+
+The idea of a network meter as a small self-contained desktop widget — rather than a window
+with chrome around it — was inspired by Collect UI's
+[Widget UI Design Inspiration](https://collectui.com/designs/widget-ui-design-inspiration/bc972294-314c-4ee0-b817-407061e33ac6)
+collection. The card's own visual design comes from the HTML reference described above, not
+from that gallery.
+
 ## Layout notes
 
 The card's own design — dimensions, corner radius, shadow, typography, spacing, the
