@@ -5,12 +5,27 @@
   // is dropped so the frameless window can float as just the card and its shadow.
   // COMPACT CARD WIDTH: horizontal only - no vertical metric is touched.
   const CSS = `
-    html,body{background:transparent !important}
+    html,body{background:transparent}
     .card{-webkit-user-select:none;user-select:none}
-    body[data-v="stack"] .card{width:min(92vw, 400px) !important}
     body{transition:opacity .35s ease}
     body.sm-dim{opacity:.55}
     @media (prefers-reduced-motion: reduce){body{transition:none}}
+
+    /* Compact card: icons, values and controls only - the text labels and status line are
+       dropped, so the rows and padding tighten up and the card narrows to fit. The status line
+       also carries "Measuring..." and error text, so compact mode loses that feedback and the
+       retest spinner is what remains.
+       No !important here on width or height: the reference's layout transition pins them with
+       inline styles, and an !important rule outranks those, which collapses the animation.
+       This style element is appended after the reference's, so source order already wins. */
+    body[data-v="stack"] .label,
+    body[data-v="stack"] .status{display:none}
+    body[data-v="stack"] .card{width:min(92vw, 268px); padding:20px 22px 18px}
+    body[data-v="stack"] #t-up{padding:2px 0 10px}
+    body[data-v="stack"] #t-dl{padding:10px 0 2px}
+    body[data-v="stack"] .footer{margin-top:12px; justify-content:flex-end}
+    body[data-v="stack"] .big{margin-top:0}
+
     /* Keep-on-top toggle: same chrome as .retest, with the reference's inset face and LED. */
     .pin{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.16);
       background:transparent;color:#bdbdbd;cursor:pointer;padding:0;

@@ -98,11 +98,16 @@ from that gallery.
 The card's own design — dimensions, corner radius, shadow, typography, spacing, the
 expanded/compact transition and its 450 ms `cubic-bezier(.22, 1, .36, 1)` easing — is the
 reference's, unmodified. Deliberate departures exist, all declared in `app-shell.js`: the page
-backdrop is transparent so the card can float, text does not select, the compact card is 400 px
-wide rather than 460 px (horizontal only; no vertical metric changes), a keep-on-top pin button
-is inserted left of the layout switcher, and the whole card fades to 55% when idle. The fade is
+backdrop is transparent so the card can float, text does not select, a keep-on-top pin button is
+inserted left of the layout switcher, and the whole card fades to 55% when idle. The fade is
 applied to `<body>` rather than `.card` because the reference's layout transition assigns
-`card.style.transition` and would drop it mid-animation. The pin button and the fade together
-widen `.tools` by 48 px and shift its left edge; no other reference geometry moves.
+`card.style.transition` and would drop it mid-animation — for the same reason none of the compact
+overrides use `!important`: an `!important` rule outranks the inline `width`/`height` that the
+transition pins, which collapses the resize into an instant jump.
+
+The compact layout additionally drops the `DOWNLOAD` / `UPLOAD` labels and the status line,
+keeping only the icons, the values and the controls, and narrows to 268 px with tighter padding.
+Consequence worth knowing: the status line is also where "Measuring download…" and connection
+errors appear, so in compact mode the retest spinner is the only progress feedback.
 
 [webview2]: https://developer.microsoft.com/microsoft-edge/webview2/
