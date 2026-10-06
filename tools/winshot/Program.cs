@@ -307,8 +307,54 @@ static class P
         SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
     }
 
+    [DllImport("user32.dll")] static extern IntPtr GetWindowLongPtr(IntPtr h, int index);
+    const int GWL_EXSTYLE = -20;
+    const int WS_EX_TOPMOST = 0x8;
+    static readonly IntPtr HWND_TOP = IntPtr.Zero;
+
+    /// <summary>
+    /// Proves always-on-top: reports the ex-style flag, then raises another window over the
+    /// target and samples the target's centre pixel. If the pixel survives, topmost is real.
+    /// </summary>
+    static void ZTest(IntPtr hwnd, string otherTitle)
+    {
+        long ex = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
+        Console.WriteLine($"target WS_EX_TOPMOST = {(ex & WS_EX_TOPMOST) != 0}");
+
+        GetWindowRect(hwnd, out RECT wr);
+        int cx = (wr.Left + wr.Right) / 2, cy = (wr.Top + wr.Bottom) / 2;
+        IntPtr sdc = GetDC(IntPtr.Zero);
+        Console.WriteLine($"  centre before raise = 0x{(GetPixel(sdc, cx, cy) & 0xFFFFFF):x6}");
+
+        IntPtr other = Find(otherTitle, 0);
+        if (other != IntPtr.Zero)
+        {
+            // Raise() presses Alt first: a bare SetForegroundWindow from a background process
+            // is often refused, which would make "did it get covered?" meaningless.
+            bool raised = Raise(other);
+            Console.WriteLine($"  raised \"{otherTitle}\" (foreground now target? {!raised})");
+        }
+        else Console.WriteLine($"  (window \"{otherTitle}\" not found)");
+
+        Thread.Sleep(900);
+        int after = GetPixel(sdc, cx, cy) & 0xFFFFFF;
+        Console.WriteLine($"  centre after raise  = 0x{after:x6}  -> {(after == 0x121212 ? "card still on top" : "card was covered")}");
+        ReleaseDC(IntPtr.Zero, sdc);
+    }
+
     static void Main(string[] args)
     {
+        int zIdx = Array.IndexOf(args, "--ztest");
+        if (zIdx >= 0)
+        {
+            string t = "Internet Speed Meter";
+            for (int i = 0; i < args.Length - 1; i++) if (args[i] == "--title") t = args[++i];
+            IntPtr h = Find(t, 0);
+            if (h == IntPtr.Zero) { Console.WriteLine("NOT_FOUND " + t); Environment.ExitCode = 2; return; }
+            ZTest(h, zIdx + 1 < args.Length ? args[zIdx + 1] : "Qoder");
+            return;
+        }
+
         int insetIdx = Array.IndexOf(args, "--insetcrop");
         if (insetIdx >= 0)
         {
@@ -359,6 +405,10 @@ static class P
             IntPtr h = Find(t, 0);
             if (h == IntPtr.Zero) { Console.WriteLine("NOT_FOUND " + t); Environment.ExitCode = 2; return; }
             var n = args[clickIdx + 1].Split(',').Select(int.Parse).ToArray();
+            // Restore whatever topmost state the target had; forcing NOTOPMOST here would
+            // silently undo the very feature a test is trying to observe.
+            long exBefore = GetWindowLongPtr(h, GWL_EXSTYLE).ToInt64();
+            bool wasTopmost = (exBefore & WS_EX_TOPMOST) != 0;
             SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
             Raise(h);
             GetWindowRect(h, out RECT clickRect);
@@ -372,7 +422,8 @@ static class P
             Hit(px, py);
             Drag(px, py, 0, 0);
             Thread.Sleep(300);
-            SetWindowPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            SetWindowPos(h, wasTopmost ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
             return;
         }
 

@@ -91,8 +91,12 @@ public partial class MainWindow : Window
         string shellJs = await File.ReadAllTextAsync(
             Path.Combine(AppContext.BaseDirectory, "Assets", "app-shell.js"));
         await core.AddScriptToExecuteOnDocumentCreatedAsync(shellJs);
-        core.WebMessageReceived += (_, args) => {
-            if (args.TryGetWebMessageAsString() == "drag") BeginDragFromCard();
+        core.WebMessageReceived += (_, args) =>
+        {
+            string message = args.TryGetWebMessageAsString();
+            if (message == "drag") BeginDragFromCard();
+            else if (message == "topmost:1") Topmost = true;
+            else if (message == "topmost:0") Topmost = false;
         };
 
         core.Navigate("https://app.local/speed-meter.html" + _query);

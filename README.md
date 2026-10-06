@@ -29,6 +29,7 @@ which is already present on current Windows 11 installs. The UI is rendered by W
 | Dot grid | The last 12 seconds of traffic per direction, oldest on the left |
 | Run a benchmark | Press `↻` — it downloads and uploads against Cloudflare, then reports the sustained rate |
 | Switch layout | The pill next to the status line toggles expanded / compact |
+| Keep it on top | The pin button left of the layout switcher holds the card above other windows. A small LED lights green when it is on, and the choice is remembered between runs |
 | Fade out when left alone | Three seconds after the pointer leaves, the card drops to 55% opacity; move back over it and it returns. Live traffic updates do not count as interaction |
 | Close it | `Alt` + `F4`, or exit from the taskbar entry |
 
@@ -90,8 +91,10 @@ The card's own design — dimensions, corner radius, shadow, typography, spacing
 expanded/compact transition and its 450 ms `cubic-bezier(.22, 1, .36, 1)` easing — is the
 reference's, unmodified. Deliberate departures exist, all declared in `app-shell.js`: the page
 backdrop is transparent so the card can float, text does not select, the compact card is 400 px
-wide rather than 460 px (horizontal only; no vertical metric changes), and the whole card fades
-to 55% when idle. The fade is applied to `<body>` rather than `.card` because the reference's
-layout transition assigns `card.style.transition` and would drop it mid-animation.
+wide rather than 460 px (horizontal only; no vertical metric changes), a keep-on-top pin button
+is inserted left of the layout switcher, and the whole card fades to 55% when idle. The fade is
+applied to `<body>` rather than `.card` because the reference's layout transition assigns
+`card.style.transition` and would drop it mid-animation. The pin button and the fade together
+widen `.tools` by 48 px and shift its left edge; no other reference geometry moves.
 
 [webview2]: https://developer.microsoft.com/microsoft-edge/webview2/

@@ -11,7 +11,22 @@
     body{transition:opacity .35s ease}
     body.sm-dim{opacity:.55}
     @media (prefers-reduced-motion: reduce){body{transition:none}}
+    /* Keep-on-top toggle: same chrome as .retest, with the reference's inset face and LED. */
+    .pin{width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.16);
+      background:transparent;color:#bdbdbd;cursor:pointer;padding:0;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+      transition:background .2s,color .2s,border-color .2s,transform .1s}
+    .pin:hover{background:rgba(255,255,255,.09);color:#fff;border-color:rgba(255,255,255,.28)}
+    .pin:active{transform:scale(.94)}
+    .pin .led{width:4px;height:4px;border-radius:50%;background:#3a3a3a;
+      transition:background .2s,box-shadow .2s}
+    .pin[aria-pressed="true"]{background:rgba(255,255,255,.14);color:#fff;
+      border-color:rgba(255,255,255,.28)}
+    .pin[aria-pressed="true"] .led{background:#16d95f;box-shadow:0 0 6px 1px rgba(22,217,95,.75)}
   `;
+
+  const PIN_SVG = 'M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7C6.45 2 6 2.45 6 3s.45 1 1 1h1v5' +
+    'c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z';
 
   const inject = () => {
     const host = document.head || document.documentElement;
@@ -56,6 +71,34 @@
         grid: document.getElementById('dots-up'), history: [], kbps: false },
     };
     let benchmarkEndedAt = 0;
+
+    // Always-on-top toggle, sitting left of the layout switcher. The host owns the window
+    // style, so the button only reports intent; the choice persists like the layout does.
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'pin';
+    pinBtn.id = 'v-pin';
+    pinBtn.type = 'button';
+    pinBtn.setAttribute('aria-label', 'Keep the card on top of other windows');
+    pinBtn.title = 'Keep on top';
+    pinBtn.innerHTML =
+      `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">` +
+      `<path d="${PIN_SVG}"/></svg><span class="led"></span>`;
+
+    const setPinned = on => {
+      pinBtn.setAttribute('aria-pressed', String(on));
+      window.chrome?.webview?.postMessage('topmost:' + (on ? 1 : 0));
+    };
+    let pinned = false;
+    try { pinned = localStorage.getItem('sm-topmost') === '1'; } catch {}
+    pinBtn.addEventListener('click', () => {
+      pinned = !pinned;
+      setPinned(pinned);
+      try { localStorage.setItem('sm-topmost', pinned ? '1' : '0'); } catch {}
+    });
+
+    const tools = document.querySelector('.tools');
+    tools.insertBefore(pinBtn, tools.firstElementChild);
+    setPinned(pinned);          // apply the persisted choice to the window
 
     card.addEventListener('pointerdown', e => {
       // A frameless window has no title bar to grab, so dragging the card body moves the window.
