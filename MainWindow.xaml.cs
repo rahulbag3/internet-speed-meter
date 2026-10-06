@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     private readonly bool _live;
     private readonly string _query;
     private TrafficSampler? _sampler;
+    private TrayIcon? _tray;
 
     public MainWindow(bool startsStacked, double scale, bool live)
     {
@@ -57,6 +58,40 @@ public partial class MainWindow : Window
 
         SourceInitialized += (_, _) => FitClientAreaToViewport();
         Loaded += OnLoadedAsync;
+
+        // Built here rather than after navigation so that Exit is reachable even if the
+        // WebView2 runtime is missing and the page never loads.
+        _tray = new TrayIcon(this);
+    }
+
+    /// <summary>Left-clicking the tray icon puts the card out of the way or back in it.</summary>
+    public void ToggleCardVisibility()
+    {
+        if (Visibility == Visibility.Visible) Hide();
+        else
+        {
+            Show();
+            Activate();
+        }
+        _tray?.SetCardVisible(Visibility == Visibility.Visible);
+    }
+
+    /// <summary>
+    /// Ask the page rather than set Window.Topmost: the pin button owns that state, its LED and
+    /// the saved preference. Only if the page never loaded is the window the one that can act.
+    /// </summary>
+    public void RequestTopmostFromTray()
+    {
+        if (Web.CoreWebView2 is { } core)
+            core.PostWebMessageAsJson(JsonSerializer.Serialize(new { cmd = "topmost", on = !Topmost }));
+        else
+            SetTopmost(!Topmost);
+    }
+
+    private void SetTopmost(bool on)
+    {
+        Topmost = on;
+        _tray?.SetTopmost(on);
     }
 
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
@@ -98,8 +133,8 @@ public partial class MainWindow : Window
         {
             string message = args.TryGetWebMessageAsString();
             if (message == "drag") BeginDragFromCard();
-            else if (message == "topmost:1") Topmost = true;
-            else if (message == "topmost:0") Topmost = false;
+            else if (message == "topmost:1") SetTopmost(true);
+            else if (message == "topmost:0") SetTopmost(false);
             else if (message.StartsWith("card:", StringComparison.Ordinal)) ResizeInputPlate(message[5..]);
         };
 
@@ -164,6 +199,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        _tray?.Dispose();
         _sampler?.Dispose();
         Web.Dispose();
         base.OnClosed(e);

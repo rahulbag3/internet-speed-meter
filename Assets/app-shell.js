@@ -175,6 +175,15 @@
     }
 
     window.chrome?.webview?.addEventListener('message', e => {
+      // The tray menu mirrors this button instead of owning the state, so the LED, the saved
+      // preference and the window style can never disagree.
+      if (e.data && e.data.cmd === 'topmost') {
+        pinned = !!e.data.on;
+        setPinned(pinned);
+        try { localStorage.setItem('sm-topmost', pinned ? '1' : '0'); } catch {}
+        return;
+      }
+
       const mbps = { dl: e.data.rx * 8 / 1e6, up: e.data.tx * 8 / 1e6 };
       for (const key of ['dl', 'up']) {
         dirs[key].history.push(mbps[key]);

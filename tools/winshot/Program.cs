@@ -77,12 +77,21 @@ static class P
 
     const int SRCCOPY = 0x00CC0020;
 
+    static bool DisqualifiedOwner(IntPtr h)
+    {
+        // ShowInTaskbar="False" makes WPF re-parent the window to an invisible HwndWrapper
+        // helper, so an owner is only disqualifying when that owner is itself on screen:
+        // that is what keeps tooltips, dropdowns and IDE panes out of the match.
+        IntPtr owner = GetWindow(h, GW_OWNER);
+        return owner != IntPtr.Zero && IsWindowVisible(owner);
+    }
+
     static IntPtr Find(string title, uint wantPid)
     {
         IntPtr best = IntPtr.Zero;
         EnumWindows((h, _) =>
         {
-            if (!IsWindowVisible(h) || GetWindow(h, GW_OWNER) != IntPtr.Zero) return true;
+            if (!IsWindowVisible(h) || DisqualifiedOwner(h)) return true;
             int len = GetWindowTextLength(h);
             if (len <= 0) return true;
             var sb = new StringBuilder(len + 1);
@@ -100,7 +109,7 @@ static class P
     {
         EnumWindows((h, _) =>
         {
-            if (!IsWindowVisible(h) || GetWindow(h, GW_OWNER) != IntPtr.Zero) return true;
+            if (!IsWindowVisible(h) || DisqualifiedOwner(h)) return true;
             int len = GetWindowTextLength(h);
             if (len <= 0) return true;
             var sb = new StringBuilder(len + 1);
@@ -220,6 +229,7 @@ static class P
     [StructLayout(LayoutKind.Sequential)] struct MOUSEINPUT { public int dx, dy; public uint mouseData, dwFlags, time; public IntPtr dwExtraInfo; }
     const uint INPUT_MOUSE = 0;
     const uint MOUSEEVENTF_MOVE = 0x1, MOUSEEVENTF_LEFTDOWN = 0x2, MOUSEEVENTF_LEFTUP = 0x4,
+               MOUSEEVENTF_RIGHTDOWN = 0x8, MOUSEEVENTF_RIGHTUP = 0x10,
                MOUSEEVENTF_ABSOLUTE = 0x8000, MOUSEEVENTF_VIRTUALDESK = 0x4000;
 
     /// <summary>Absolute (0..65535 virtual-desktop) coordinate input, so drags are not DPI-virtualised.</summary>
@@ -390,6 +400,23 @@ static class P
             var n = args[dragIdx + 1].Split(',').Select(int.Parse).ToArray();
             Drag(n[0], n[1], n[2], n[3]);
             Thread.Sleep(400);
+            return;
+        }
+
+        // Right-click at absolute screen coordinates: the only way to open a tray menu, which
+        // is the sole Exit path once the window has no taskbar button.
+        int rclickIdx = Array.IndexOf(args, "--rclick");
+        if (rclickIdx >= 0)
+        {
+            var n = args[rclickIdx + 1].Split(',').Select(int.Parse).ToArray();
+            SetCursorPos(n[0], n[1]);
+            Thread.Sleep(200);
+            SendMouse(MOUSEEVENTF_MOVE, n[0], n[1]);
+            SendMouse(MOUSEEVENTF_MOVE | MOUSEEVENTF_RIGHTDOWN, n[0], n[1]);
+            Thread.Sleep(120);
+            SendMouse(MOUSEEVENTF_MOVE | MOUSEEVENTF_RIGHTUP, n[0], n[1]);
+            Thread.Sleep(600);      // let the menu paint before anything captures it
+            Hit(n[0], n[1]);
             return;
         }
 

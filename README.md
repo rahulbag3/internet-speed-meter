@@ -2,7 +2,8 @@
 
 A small floating network meter for Windows. It shows live system throughput in the two
 directions, keeps a short scrolling history, and can run an on-demand benchmark when you ask
-it to. No window border, no title bar, no background panel — just the card on your desktop.
+it to. No window border, no title bar, no background panel, no taskbar button — just the card
+on your desktop and an icon in the system tray.
 
 | Expanded | Compact |
 | --- | --- |
@@ -29,9 +30,13 @@ which is already present on current Windows 11 installs. The UI is rendered by W
 | Dot grid | The last 12 seconds of traffic per direction, oldest on the left |
 | Run a benchmark | Press `↻` — it downloads and uploads against Cloudflare, then reports the sustained rate |
 | Switch layout | The pill next to the status line toggles expanded / compact |
-| Keep it on top | The pin button left of the layout switcher holds the card above other windows. A small LED lights green when it is on, and the choice is remembered between runs |
+| Keep it on top | The pin button left of the layout switcher holds the card above other windows. A small LED lights green when it is on, and the choice is remembered between runs. The tray menu's `Keep on top` is the same switch, not a second one |
 | Fade out when left alone | Three seconds after the pointer leaves, the card drops to 55% opacity; move back over it and it returns. Live traffic updates do not count as interaction |
-| Close it | `Alt` + `F4`, or exit from the taskbar entry |
+| Hide it | Left-click the tray icon. Left-click again to bring it back — same window, so it returns where you left it |
+| Close it | Right-click the tray icon → `Exit`. The card has no title bar and no taskbar button, so the tray menu is where the app is managed; `Alt` + `F4` also quits while the card has focus |
+
+On Windows 11 a new tray icon usually starts out in the hidden-icons flyout: press the `^`
+chevron in the tray to see it, and drag it onto the taskbar if you want it always visible.
 
 The benchmark only ever runs on press. While it runs, and for five seconds afterwards, it owns
 the readout; then live traffic resumes.
@@ -64,8 +69,18 @@ the host, which resizes the plate to match and rounds it to the card's 28 px rad
 the plate is an invisible rectangle larger than the card and swallows clicks beside it. Anything
 outside the card passes clicks straight through to the desktop.
 
+The tray icon is a WinForms `NotifyIcon` in `TrayIcon.cs`, the only WinForms type in the build;
+the desktop framework pack already carries that assembly, so it costs 205 KB compressed.
+`ShowInTaskbar="False"` makes WPF re-parent the card to an invisible helper window, which is why
+the screenshot probe treats a window as top-level whenever its owner is off screen.
+
+`Assets/app.ico` is drawn rather than sourced: `tools/mkicon.ps1` renders the card's own surface
+and the two arrow glyphs from the reference at 1024 px, then writes a 32-bit multi-size icon
+(16 to 256 px, including the 20 and 40 px frames a 125% or 150% tray actually samples).
+
 ```
 dotnet build -c Release                                    # debug build
+powershell -File tools\mkicon.ps1                          # redraw Assets\app.ico + size proofs
 dotnet publish -c Release -r win-x64 --self-contained true \
   -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
   -o publish/portable-win-x64                              # portable
@@ -80,11 +95,16 @@ glance. It drives both the reference page (in a real browser window, so text ant
 matches) and the app over CDP, then compares every rectangle and computed style:
 
 ```
-node tools/verify.mjs all            # geometry, styles, and the layout-transition timing
-node tools/verify.mjs onscreen       # pixel-diffs both windows as the desktop paints them
-node tools/verify.mjs responsive     # six viewports, including both breakpoints
-node tools/livetest.mjs              # live readout, benchmark handover, history scroll
+node tools/verify.mjs all --scale=1    # geometry, styles, and the layout-transition timing
+node tools/verify.mjs onscreen         # pixel-diffs both windows as the desktop paints them
+node tools/verify.mjs responsive       # six viewports, including both breakpoints
+node tools/livetest.mjs                # live readout, benchmark handover, history scroll
 ```
+
+Pass `--scale=1`: the suite attaches to the app over CDP by port, so an instance left running
+from an earlier session answers instead of the one it just started, and at the shipping 0.6
+scale every measurement lands on a 0.9 device-pixel ratio and the report fills with sub-pixel
+rounding. `taskkill /IM InternetSpeedMeter.exe /F` first if anything is already running.
 
 It needs the reference HTML, which is not in this repo: copy `tools/paths.local.example.json`
 to `tools/paths.local.json` and point `referenceHtml` at it, or set `SM_REFERENCE_HTML`.

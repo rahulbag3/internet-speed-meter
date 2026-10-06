@@ -4,15 +4,24 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- Only for NotifyIcon; the UI stays WPF. The desktop framework pack already carries
+         WinForms, so the self-contained publish grows by about 200 KB compressed. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>InternetSpeedMeter</RootNamespace>
     <AssemblyName>InternetSpeedMeter</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <Product>Internet Speed Meter</Product>
     <AssemblyTitle>Internet Speed Meter</AssemblyTitle>
     <Version>1.0.0</Version>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- WFAC010 asks WinForms apps to drop the manifest's dpiAwareness for
+         Application.SetHighDpiMode. This is a WPF app: its PerMonitorV2 handling lives in
+         app.manifest, MainWindow re-fits the client area from GetDpiForWindow, and the
+         SetHighDpiMode route is a no-op once the manifest has already declared awareness. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +29,13 @@
     <Compile Remove="tools/**" />
     <None Remove="tools/**" />
     <Page Remove="tools/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WinForms is in this build only for NotifyIcon, and TrayIcon.cs reaches it through an
+         explicit alias. Its implicit global using would make bare names like Application and
+         Timer ambiguous against WPF and System.Threading. -->
+    <Using Remove="System.Windows.Forms" />
   </ItemGroup>
 
   <ItemGroup>

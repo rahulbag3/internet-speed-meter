@@ -8,6 +8,7 @@
         AllowsTransparency="True"
         Background="Transparent"
         ResizeMode="NoResize"
+        ShowInTaskbar="False"
         UseLayoutRounding="True">
   <Grid>
     <!-- A layered window is hit-tested from the WPF surface, not from WebView2, so an
