@@ -106,8 +106,9 @@ overrides use `!important`: an `!important` rule outranks the inline `width`/`he
 transition pins, which collapses the resize into an instant jump.
 
 The compact layout additionally drops the `DOWNLOAD` / `UPLOAD` labels and the status line,
-keeping only the icons, the values and the controls, and narrows to 268 px with tighter padding.
-Consequence worth knowing: the status line is also where "Measuring download…" and connection
-errors appear, so in compact mode the retest spinner is the only progress feedback.
+keeping only the icons, the values and the controls — each row and the control group centred —
+and narrows to 210 × 175 px. Consequence worth knowing: the status line is also where
+"Measuring download…" and connection errors appear, so in compact mode the retest spinner is the
+only progress feedback.
 
 [webview2]: https://developer.microsoft.com/microsoft-edge/webview2/

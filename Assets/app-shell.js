@@ -20,10 +20,11 @@
        This style element is appended after the reference's, so source order already wins. */
     body[data-v="stack"] .label,
     body[data-v="stack"] .status{display:none}
-    body[data-v="stack"] .card{width:min(92vw, 268px); padding:20px 22px 18px}
-    body[data-v="stack"] #t-up{padding:2px 0 10px}
-    body[data-v="stack"] #t-dl{padding:10px 0 2px}
-    body[data-v="stack"] .footer{margin-top:12px; justify-content:flex-end}
+    body[data-v="stack"] .card{width:min(92vw, 210px); padding:16px 16px 14px}
+    body[data-v="stack"] .thead{justify-content:center; gap:12px}
+    body[data-v="stack"] #t-up{padding:0 0 8px}
+    body[data-v="stack"] #t-dl{padding:8px 0 0}
+    body[data-v="stack"] .footer{margin-top:10px; justify-content:center}
     body[data-v="stack"] .big{margin-top:0}
 
     /* Keep-on-top toggle: same chrome as .retest, with the reference's inset face and LED. */
