@@ -20,8 +20,10 @@
     .pin:active{transform:scale(.94)}
     .pin .led{width:4px;height:4px;border-radius:50%;background:#3a3a3a;
       transition:background .2s,box-shadow .2s}
-    .pin[aria-pressed="true"]{background:rgba(255,255,255,.14);color:#fff;
-      border-color:rgba(255,255,255,.28)}
+    /* On state is carried by the ring and the LED only; a filled disc read as the whole
+       button glowing. Ring is stronger than the hover ring so the state is still legible
+       while the pointer is over it. */
+    .pin[aria-pressed="true"]{border-color:rgba(255,255,255,.40);color:#fff}
     .pin[aria-pressed="true"] .led{background:#16d95f;box-shadow:0 0 6px 1px rgba(22,217,95,.75)}
   `;
 
