@@ -1,0 +1,15 @@
+# Build output
+bin/
+obj/
+publish/
+dist/
+
+# Verification artefacts: these are screenshots of the desktop and raw geometry captures.
+verify/
+tools/winshot/bin/
+tools/winshot/obj/
+
+# Machine-local paths (see tools/paths.local.example.json)
+tools/paths.local.json
+
+*.user

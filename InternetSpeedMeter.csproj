@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>InternetSpeedMeter</RootNamespace>
+    <AssemblyName>InternetSpeedMeter</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Product>Internet Speed Meter</Product>
+    <AssemblyTitle>Internet Speed Meter</AssemblyTitle>
+    <Version>1.0.0</Version>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- tools/ holds the verification harness, which has its own project. -->
+    <Compile Remove="tools/**" />
+    <None Remove="tools/**" />
+    <Page Remove="tools/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+    <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The UI is loaded from disk at runtime, so these must land next to the exe in a
+         publish as well as a build; `dotnet publish -o` wipes the folder first. -->
+    <None Update="Assets\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
