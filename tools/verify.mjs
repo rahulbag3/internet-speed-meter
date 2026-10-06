@@ -46,6 +46,11 @@ async function collect(cdp, dir, { stackedStart, screenshot = true }) {
   mkdirSync(dir, { recursive: true });
   const out = {};
 
+  // The card fades when idle; pin it solid so captures describe the design, not the moment.
+  // Inline opacity outranks the .sm-dim class.
+  const pin = async () => { await cdp.evaluate(`document.body.style.opacity = '1'`); };
+  await pin();
+
   const toSide = async () => {
     if (await cdp.evaluate(`document.body.dataset.v`) === 'side') return;
     await cdp.evaluate(`document.getElementById('v-side').click()`);
@@ -58,10 +63,12 @@ async function collect(cdp, dir, { stackedStart, screenshot = true }) {
   };
 
   if (stackedStart) await toStack(); else await toSide();
+  await pin();
   out.side = await cdp.evaluate(snap);
   if (screenshot) await cdp.screenshot(path.join(dir, 'side.png'));
 
   await toStack();
+  await pin();
   out.stack = await cdp.evaluate(snap);
   if (screenshot) await cdp.screenshot(path.join(dir, 'stack.png'));
 
@@ -418,6 +425,7 @@ async function stackMode() {
     await cdp.send('Runtime.enable');
     console.log('reference fitted:', JSON.stringify(await fitViewport(cdp, 560, 420)));
     await sleep(700);
+    await cdp.evaluate(`document.body.style.opacity = '1'`);
     ref = await cdp.evaluate(snap);
     refPng = path.join(OUT, 'stack-ref-560.png');
     await cdp.screenshot(refPng);
@@ -438,6 +446,7 @@ async function stackMode() {
   await a.send('Page.enable');
   await a.send('Runtime.enable');
   await waitForCard(a);
+  await a.evaluate(`document.body.style.opacity = '1'`);
   const act = await a.evaluate(snap);
   const actPng = path.join(OUT, 'stack-app-560.png');
   await a.screenshot(actPng);
@@ -473,6 +482,7 @@ async function responsive() {
       // The app persists the last mode (localStorage), so pin both surfaces to one mode.
       await cdp.evaluate(`document.getElementById('v-side').click()`);
       await sleep(700);
+      await cdp.evaluate(`document.body.style.opacity = '1'`);
       out[`${w}x${h}`] = await cdp.evaluate(snap);
     }
     return out;

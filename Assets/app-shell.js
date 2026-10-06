@@ -8,6 +8,9 @@
     html,body{background:transparent !important}
     .card{-webkit-user-select:none;user-select:none}
     body[data-v="stack"] .card{width:min(92vw, 400px) !important}
+    body{transition:opacity .35s ease}
+    body.sm-dim{opacity:.55}
+    @media (prefers-reduced-motion: reduce){body{transition:none}}
   `;
 
   const inject = () => {
@@ -29,6 +32,7 @@
   const HISTORY = 12;        // one column per sample, 1s apart
   const FLOOR_MBPS = 10;     // keeps idle noise from filling the grid
   const RESULT_HOLD_MS = 5000;
+  const IDLE_MS = 3000;      // how long after the pointer leaves before the card recedes
 
   // Same rule the reference uses for its benchmark readout, so live and tested values match.
   const fmt = v => v >= 10 ? String(Math.round(v)) : v.toFixed(1);
@@ -58,6 +62,18 @@
       if (e.button !== 0 || e.target.closest('button')) return;
       window.chrome?.webview?.postMessage('drag');
     });
+
+    // Recede when left alone. The fade is on <body>, not .card, because the reference's own
+    // layout transition assigns card.style.transition and would drop this one mid-animation.
+    // The transparent padding is click-through, so pointerenter/leave track the card itself.
+    let idleTimer = null;
+    const wake = () => { clearTimeout(idleTimer); document.body.classList.remove('sm-dim'); };
+    const arm = () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => document.body.classList.add('sm-dim'), IDLE_MS); };
+    card.addEventListener('pointerenter', wake);
+    card.addEventListener('pointerleave', arm);
+    card.addEventListener('pointerdown', arm);
+    addEventListener('wheel', arm, { passive: true });
+    arm();
 
     // While a benchmark runs it owns the readout and the dot grid; the reference's own
     // clearAll() and dino animation write to the same nodes.
