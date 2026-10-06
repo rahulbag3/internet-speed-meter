@@ -58,6 +58,12 @@ card) is layered on from `Assets/app-shell.js`, which the host injects at docume
 Traffic comes from the `\Network Interface(*)\Bytes Received|Sent/sec` performance counters,
 summed across adapters — see `TrafficSampler.cs`.
 
+A layered transparent window is hit-tested from the WPF surface, so an almost-invisible plate in
+that surface is what makes the card clickable at all. The page reports the card's live size to
+the host, which resizes the plate to match and rounds it to the card's 28 px radius; without that
+the plate is an invisible rectangle larger than the card and swallows clicks beside it. Anything
+outside the card passes clicks straight through to the desktop.
+
 ```
 dotnet build -c Release                                    # debug build
 dotnet publish -c Release -r win-x64 --self-contained true \

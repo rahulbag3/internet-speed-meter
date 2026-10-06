@@ -370,7 +370,20 @@ static class P
         }
 
         int hitIdx = Array.IndexOf(args, "--hit");
-        if (hitIdx >= 0) { var n = args[hitIdx + 1].Split(',').Select(int.Parse).ToArray(); Hit(n[0], n[1]); return; }
+        if (hitIdx >= 0)
+        {
+            // Optionally raise the owning window first; without this a hit test on a window
+            // that is behind something else just reports that other window.
+            int titleIdx = Array.IndexOf(args, "--title");
+            if (titleIdx >= 0 && titleIdx + 1 < args.Length)
+            {
+                IntPtr h = Find(args[titleIdx + 1], 0);
+                if (h != IntPtr.Zero) { Raise(h); Console.WriteLine($"raised \"{args[titleIdx + 1]}\" before hit test"); }
+            }
+            var n = args[hitIdx + 1].Split(',').Select(int.Parse).ToArray();
+            Hit(n[0], n[1]);
+            return;
+        }
         int dragIdx = Array.IndexOf(args, "--drag");
         if (dragIdx >= 0)
         {

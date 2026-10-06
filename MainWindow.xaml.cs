@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -18,7 +19,8 @@ public partial class MainWindow : Window
     // Card box (CSS px) each launcher can show. The expanded card is always the larger of the
     // two modes, so sizing the input plate to it covers compact mode and the transition too.
     private const double SideCardWidth = 580, SideCardHeight = 442;
-    private const double StackCardWidth = 515, StackCardHeight = 400;
+    private const double StackCardWidth = 210, StackCardHeight = 175;
+    private const double CardCornerRadiusCss = 28;
 
     private readonly double _clientWidth;
     private readonly double _clientHeight;
@@ -45,6 +47,7 @@ public partial class MainWindow : Window
         // measured value stay identical to the reference while the window gets smaller.
         InputPlate.Width = _cardWidth * _scale;
         InputPlate.Height = _cardHeight * _scale;
+        InputPlate.RadiusX = InputPlate.RadiusY = CardCornerRadiusCss * _scale;   // match .card
         Width = _clientWidth * _scale;
         Height = _clientHeight * _scale;
         // Alpha 0 lets the desktop show through the page's transparent padding, so the card
@@ -97,6 +100,7 @@ public partial class MainWindow : Window
             if (message == "drag") BeginDragFromCard();
             else if (message == "topmost:1") Topmost = true;
             else if (message == "topmost:0") Topmost = false;
+            else if (message.StartsWith("card:", StringComparison.Ordinal)) ResizeInputPlate(message[5..]);
         };
 
         core.Navigate("https://app.local/speed-meter.html" + _query);
@@ -107,6 +111,23 @@ public partial class MainWindow : Window
             _sampler.Sampled += (rx, tx) => Dispatcher.BeginInvoke(() =>
                 core.PostWebMessageAsJson(JsonSerializer.Serialize(new { rx, tx })));
         }
+    }
+
+    /// <summary>
+    /// Shrinks the input plate to the card's current box. The plate is what makes a layered
+    /// window hit-testable, so anywhere it is larger than the card is an invisible rectangle
+    /// that eats clicks meant for the desktop.
+    /// </summary>
+    private void ResizeInputPlate(string csv)
+    {
+        string[] parts = csv.Split(',');
+        if (parts.Length != 2) return;
+        if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double w) ||
+            !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double h)) return;
+        if (w <= 0 || h <= 0) return;
+
+        InputPlate.Width = w * _scale;
+        InputPlate.Height = h * _scale;
     }
 
     /// <summary>Hand the drag that started on the card back to the window manager.</summary>

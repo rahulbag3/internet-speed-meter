@@ -118,6 +118,15 @@
     tools.insertBefore(pinBtn, tools.firstElementChild);
     setPinned(pinned);          // apply the persisted choice to the window
 
+    // The host's input plate must cover exactly the card: anywhere else is transparent and
+    // would otherwise swallow clicks meant for the desktop behind the window.
+    const reportSize = () => {
+      const r = card.getBoundingClientRect();
+      window.chrome?.webview?.postMessage(`card:${r.width.toFixed(2)},${r.height.toFixed(2)}`);
+    };
+    new ResizeObserver(reportSize).observe(card);
+    reportSize();
+
     card.addEventListener('pointerdown', e => {
       // A frameless window has no title bar to grab, so dragging the card body moves the window.
       if (e.button !== 0 || e.target.closest('button')) return;
